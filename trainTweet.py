@@ -2,6 +2,7 @@
 
 import subprocess
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description="Tweet some Train Statuses!")
 parser.add_argument("-s", "--station", dest="station", type=str, help="Station Short Code. Ex: 'SLM'")
@@ -14,11 +15,12 @@ args = parser.parse_args()
 
 def main():
     def run_command(cmd_array, shell=False):
+        print "Executing `{}`".format(cmd_array)
         p = subprocess.Popen(cmd_array, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell)
         out, err = p.communicate()
         return out
 
-    command = ['phantomjs', 'trainStatus.js']
+    command = ['phantomjs', "{}/trainStatus.js".format(os.getcwd())]
     if args.station:
         command.append(str(args.station))
     if args.train:
@@ -26,10 +28,9 @@ def main():
     if args.date:
         command.append(str(args.date))
 
-    print "Executing {}".format(command)
     text = run_command(command)
     tweet = text.split("-" * 3)
-    result = run_command(['node', 'twitter.js', tweet[1]])
+    result = run_command(['node', "{}/twitter.js".format(os.getcwd()), tweet[1]])
     print result
 
 if __name__ == "__main__":
