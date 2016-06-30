@@ -8,9 +8,13 @@ var client = new Twitter({
 });
 
 if (process.argv.length != 3) {
+  console.log("[ERROR] Not enough arguments. We need 3, we had " + process.argv.length);
   exit(1);
 }
 var status = process.argv[2];
+
+console.log("About to tweet:");
+console.log(status);
 
 client.post('statuses/update', {status: status}, function(error, tweet, response) {
   if (error) console.log("[ERROR]: " + error);
