@@ -26,6 +26,7 @@ def main():
     if args.date:
         command.append(str(args.date))
 
+    print "Executing {}".format(command)
     text = run_command(command)
     tweet = text.split("-" * 3)
     print tweet[0]
