@@ -29,8 +29,6 @@ def main():
     print "Executing {}".format(command)
     text = run_command(command)
     tweet = text.split("-" * 3)
-    print tweet[0]
-    print tweet[1]
     result = run_command(['node', 'twitter.js', tweet[1]])
     print result
 
