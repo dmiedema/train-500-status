@@ -16,10 +16,6 @@ console.log('Station: ' + station);
 console.log('Train Number: ' + trainNumber);
 console.log('Date: ' + date);
 
-page.onConsoleMessage = function(msg, lineNum, sourceId) {
-  console.log('CONSOLE: ' + msg + ' (line: ' + lineNum + ' in: "' + sourceId + '")');
-};
-
 page.open('https://tickets.amtrak.com/itd/amtrak', function(status) {
   if (status !== 'success') {
     console.log('[ERROR] Failure to load page');
@@ -49,25 +45,24 @@ page.open('https://tickets.amtrak.com/itd/amtrak', function(status) {
     // SEND IT!
     var lastItem = submitDiv.children.length - 1;
     submitDiv.children[lastItem].click();
-
   }, station, trainNumber, date, page); // end page.evaluate
 
   setTimeout(function() {
     // page.render("submitted.png");
-    var output;
-    output = page.evaluate(function() {
+    var output = page.evaluate(function() {
       // Response?
       var responseDiv = document.getElementById('resp_by_train_num_status_details');
       return responseDiv.innerText;
     });
-    console.log(output);
+    finishUp(output);
     }, 2000);
-
-  setTimeout(function() {
-    phantom.exit();
-  }, 3000);
 });
 
+function finishUp(output) {
+  console.log("---");
+  console.log(output);
+  phantom.exit();
+}
 
 function currentDateString() {
   var date = new Date();
@@ -76,6 +71,5 @@ function currentDateString() {
 
   // MM/DD/YYY
   return addPadding(date.getMonth() + 1) + "/" + addPadding(date.getDate()) + "/" + addPadding(date.getFullYear());
-
 }
 
