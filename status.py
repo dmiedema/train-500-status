@@ -59,9 +59,9 @@ def main():
     actual_arrival_string = ''
     scheduled_arrival_string = scheduled_arrival.strftime(time_format_string)
 
-    arrival_offset = (scheduled_arrival - actual_arrival).total_seconds() / 60
     arrival_offset_string = ""
     if actual_arrival:
+        arrival_offset = (scheduled_arrival - actual_arrival).total_seconds() / 60
         actual_arrival_string = actual_arrival.strftime(time_format_string)
         if arrival_offset > 0:
             arrival_offset_string = "{} min Early".format(abs(int(arrival_offset)))
@@ -71,9 +71,9 @@ def main():
     actual_departure_string = ''
     scheduled_departure_string = scheduled_departure.strftime(time_format_string)
 
-    departure_offset = (scheduled_departure - actual_departure).total_seconds() / 60
     departure_offset_string = ""
     if actual_departure:
+        departure_offset = (scheduled_departure - actual_departure).total_seconds() / 60
         actual_departure_string = actual_departure.strftime(time_format_string)
         if departure_offset > 0:
             departure_offset_string = "{} min Early".format(abs(int(departure_offset)))
