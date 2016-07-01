@@ -12,8 +12,9 @@ parser.add_argument("-s", "--station", dest="station", type=str, required=True, 
 parser.add_argument('-t', '--train', dest='train', type=int, required=True, help='Train Number. Ex: 500')
 parser.add_argument('-d', '--date', dest='date', type=str, required=True, help='Date. YYYY-MM-DD')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose, debugging output')
+parser.add_argument('--dry-run', dest='dry_run', action='store_true', help='Skip posting to twitter')
 
-parser.set_defaults(station=None, train=None, date=None, verbose=False)
+parser.set_defaults(station=None, train=None, date=None, verbose=False, dry_run=False)
 
 args = parser.parse_args()
 
@@ -107,17 +108,20 @@ Scheduled: {scheduled_departure_time}
 
     if args.verbose:
         print update
-        print len(update)
+        print "Post Length: {}".format(len(update))
 
     api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
                       consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
                       access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
                       access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
 
-    status = api.PostUpdate(update)
+    if not args.dry_run:
+        status = api.PostUpdate(update)
+        if args.verbose:
+            print status
 
     if args.verbose:
-        print status
+        print api
 
 if __name__ == '__main__':
     main()
