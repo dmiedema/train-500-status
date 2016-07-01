@@ -56,7 +56,7 @@ def main():
     stop_duration       = info['durationMinutes']
 
     time_format_string = '%I:%M %p'
-    actual_arrival_string = actual_arrival.strftime(time_format_string)
+    actual_arrival_string = actual_arrival.strftime(time_format_string) or ''
     scheduled_arrival_string = scheduled_arrival.strftime(time_format_string)
 
     arrival_offset = (scheduled_arrival - actual_arrival).total_seconds() / 60
@@ -66,7 +66,7 @@ def main():
     else:
         arrival_offset_string = "{} min Late".format(abs(int(arrival_offset)))
 
-    actual_departure_string = actual_departure.strftime(time_format_string)
+    actual_departure_string = actual_departure.strftime(time_format_string) or ''
     scheduled_departure_string = scheduled_departure.strftime(time_format_string)
 
     departure_offset = (scheduled_departure - actual_departure).total_seconds() / 60
