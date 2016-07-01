@@ -1,0 +1,9 @@
+# m h dom mon dow    command
+
+SHELL=$(which zsh)
+TZ=America/Los_Angeles
+DATE=$(date "+%Y-%m-%d")
+
+# 15 6 * * 1-5 ALY
+# 45 6 * * 1-5 SLM
+
