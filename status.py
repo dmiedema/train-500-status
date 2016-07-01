@@ -109,15 +109,15 @@ Scheduled: {scheduled_departure_time}
         print update
         print len(update)
 
-    # api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
-    #                   consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
-    #                   access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
-    #                   access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
+    api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
+                      consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
+                      access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
+                      access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
 
-    # status = api.PostUpdate(update)
+    status = api.PostUpdate(update)
 
-    # if args.verbose:
-    #     print status
+    if args.verbose:
+        print status
 
 if __name__ == '__main__':
     main()
