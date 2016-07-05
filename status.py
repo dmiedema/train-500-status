@@ -42,16 +42,27 @@ def main():
 
     r = requests.post('https://services.amtrak.com/Rider/TrainStatus', headers=headers, json=params)
     j = r.json()
+    if args.verbose:
+        print '--- Begin JSON Response ---'
+        print j
+        print '--- End JSON Response ---'
+
     info = j['journeys'][0]['segments'][0]
 
+    disruption_message = None
+    if info['destinationStatusComment'] is not None:
+        disruption_message = info['destinationStatusComment']
+
     if args.verbose:
+        print '--- Begin info[journeys][0][segments][0] ---'
         print info
+        print '--- End info[journeys][0][segments][0] ---'
 
     station_short_code  = info['originStationCode']
     scheduled_arrival   = convert_to_datetime(info['destinationScheduledArrivalDateTime'])
-    actual_arrival      = convert_to_datetime(info['destinationPostedArrivalDateTime'])
+    actual_arrival      = disruption_message or convert_to_datetime(info['destinationPostedArrivalDateTime'])
     scheduled_departure = convert_to_datetime(info['originScheduledDepartureDateTime'])
-    actual_departure    = convert_to_datetime(info['originPostedDepartureDateTime'])
+    actual_departure    = disruption_message or convert_to_datetime(info['originPostedDepartureDateTime'])
     route_name          = info['routeName']
     train_number        = info['trainNumber']
     stop_duration       = info['durationMinutes']
@@ -61,25 +72,29 @@ def main():
     scheduled_arrival_string = scheduled_arrival.strftime(time_format_string)
 
     arrival_offset_string = ""
-    if actual_arrival:
+    if actual_arrival and disruption_message is None:
         arrival_offset = (scheduled_arrival - actual_arrival).total_seconds() / 60
         actual_arrival_string = actual_arrival.strftime(time_format_string)
         if arrival_offset > 0:
             arrival_offset_string = "{} min Early".format(abs(int(arrival_offset)))
         else:
             arrival_offset_string = "{} min Late".format(abs(int(arrival_offset)))
+    else:
+        arrival_offset_string = disruption_message.upper()
 
     actual_departure_string = ''
     scheduled_departure_string = scheduled_departure.strftime(time_format_string)
 
     departure_offset_string = ""
-    if actual_departure:
+    if actual_departure and disruption_message is None:
         departure_offset = (scheduled_departure - actual_departure).total_seconds() / 60
         actual_departure_string = actual_departure.strftime(time_format_string)
         if departure_offset > 0:
             departure_offset_string = "{} min Early".format(abs(int(departure_offset)))
         else:
             departure_offset_string = "{} min Late".format(abs(int(departure_offset)))
+    else:
+        departure_offset_string = disruption_message.upper()
 
     current_date = scheduled_arrival.strftime('%a, %b %d, %Y')
     """ Format
