@@ -1,6 +1,10 @@
 # train-500-status
 Amtrak Train 500 status
 
+[![Build Status](https://travis-ci.org/dmiedema/train-500-status.svg?branch=master)](https://travis-ci.org/dmiedema/train-500-status)
+[![codecov](https://codecov.io/gh/dmiedema/train-500-status/branch/master/graph/badge.svg)](https://codecov.io/gh/dmiedema/train-500-status)
+
+
 ## Requirements
 - python
 - pip
