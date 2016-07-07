@@ -1,3 +1,4 @@
 requests
 python-twitter
+pytest
 

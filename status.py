@@ -7,65 +7,57 @@ import os
 import twitter
 from datetime import datetime
 
-parser = argparse.ArgumentParser(description="Train Status Fetcher")
-parser.add_argument("-s", "--station", dest="station", type=str, required=True, help="Station Short Code. Ex: 'SLM'")
-parser.add_argument('-t', '--train', dest='train', type=int, required=True, help='Train Number. Ex: 500')
-parser.add_argument('-d', '--date', dest='date', type=str, required=True, help='Date. YYYY-MM-DD')
-parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose, debugging output')
-parser.add_argument('--dry-run', dest='dry_run', action='store_true', help='Skip posting to twitter')
-
-parser.set_defaults(station=None, train=None, date=None, verbose=False, dry_run=False)
-
-args = parser.parse_args()
-
 def convert_to_datetime(s):
     if s:
         return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
     return None
 
-def main():
-    headers = {
-        'User-Agent': 'AmtrakMobileRider/20160511.1521 CFNetwork/711.1.16 Darwin/14.0.0',
-        'Content-Type': 'application/json',
-    }
-    params = {
-        'appType': 'IOS',
-        'type': 'A',
-        'dateTime': args.date,
-        'trainNumber': str(args.train),
-        'versionNumber': '2.2.7',
-        'origin': args.station.upper(),
-    }
-    if args.verbose:
-        print json.dumps(headers)
-        print json.dumps(params)
+def post_to_twitter(post, verbose=False, dry_run=False):
+    if verbose:
+        print post
+        print "Post Length: {}".format(len(post))
 
-    r = requests.post('https://services.amtrak.com/Rider/TrainStatus', headers=headers, json=params)
-    j = r.json()
-    if args.verbose:
-        print '--- Begin JSON Response ---'
-        print j
-        print '--- End JSON Response ---'
+    api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
+                      consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
+                      access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
+                      access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
 
-    info = j['journeys'][0]['segments'][0]
+    if not dry_run:
+        status = api.PostUpdate(post)
+        if verbose:
+            print status
 
+    if verbose:
+        print api
+
+    return api
+
+def extract_segment_json(json, verbose=False):
+    if verbose:
+        print json
+    try:
+        return json['journeys'][0]['segments'][0]
+    except:
+        return None
+
+def build_post_from_json(json, verbose=False):
     disruption_message = None
-    if info['destinationStatusComment'] is not None:
-        disruption_message = info['destinationStatusComment']
+    if json['destinationStatusComment'] is not None:
+        disruption_message = json['destinationStatusComment']
 
-    if args.verbose:
+    if verbose:
         print '--- Begin info[journeys][0][segments][0] ---'
-        print info
+        print json
         print '--- End info[journeys][0][segments][0] ---'
 
-    station_short_code  = info['originStationCode']
-    scheduled_arrival   = convert_to_datetime(info['destinationScheduledArrivalDateTime'])
-    actual_arrival      = disruption_message or convert_to_datetime(info['destinationPostedArrivalDateTime'])
-    scheduled_departure = convert_to_datetime(info['originScheduledDepartureDateTime'])
-    actual_departure    = disruption_message or convert_to_datetime(info['originPostedDepartureDateTime'])
-    route_name          = info['routeName']
-    train_number        = info['trainNumber']
-    stop_duration       = info['durationMinutes']
+    station_short_code  = json['originStationCode']
+    scheduled_arrival   = convert_to_datetime(json['destinationScheduledArrivalDateTime'])
+    actual_arrival      = disruption_message or convert_to_datetime(json['destinationPostedArrivalDateTime'])
+    scheduled_departure = convert_to_datetime(json['originScheduledDepartureDateTime'])
+    actual_departure    = disruption_message or convert_to_datetime(json['originPostedDepartureDateTime'])
+    route_name          = json['routeName']
+    train_number        = json['trainNumber']
+    stop_duration       = json['durationMinutes']
 
     time_format_string = '%I:%M %p'
     actual_arrival_string = ''
@@ -124,23 +116,60 @@ Scheduled: {scheduled_departure_time}
     scheduled_departure_time=scheduled_departure_string,
     date=current_date,
 )
+    return update
 
+def main():
+    parser = argparse.ArgumentParser(description="Train Status Fetcher")
+    parser.add_argument("-s", "--station", dest="station", type=str, required=True, help="Station Short Code. Ex: 'SLM'")
+    parser.add_argument('-t', '--train', dest='train', type=int, required=True, help='Train Number. Ex: 500')
+    parser.add_argument('-d', '--date', dest='date', type=str, required=True, help='Date. YYYY-MM-DD')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose, debugging output')
+    parser.add_argument('--dry-run', dest='dry_run', action='store_true', help='Skip posting to twitter')
+
+    parser.set_defaults(station=None, train=None, date=None, verbose=False, dry_run=False)
+
+    args = parser.parse_args()
+
+    headers = {
+        'User-Agent': 'AmtrakMobileRider/20160511.1521 CFNetwork/711.1.16 Darwin/14.0.0',
+        'Content-Type': 'application/json',
+    }
+    params = {
+        'appType': 'IOS',
+        'type': 'A',
+        'dateTime': args.date,
+        'trainNumber': str(args.train),
+        'versionNumber': '2.2.7',
+        'origin': args.station.upper(),
+    }
     if args.verbose:
-        print update
-        print "Post Length: {}".format(len(update))
+        print json.dumps(headers)
+        print json.dumps(params)
 
-    api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
-                      consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
-                      access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
-                      access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
-
-    if not args.dry_run:
-        status = api.PostUpdate(update)
-        if args.verbose:
-            print status
-
+    r = requests.post('https://services.amtrak.com/Rider/TrainStatus', headers=headers, json=params)
+    j = r.json()
     if args.verbose:
-        print api
+        print '--- Begin JSON Response ---'
+        print j
+        print '--- End JSON Response ---'
+
+    info = extract_segment_json(j)
+    if not info:
+        print '[ERROR] - Failure to extract segment json'
+        print "--- BEGIN FAILING JSON ---"
+        print j
+        print "--- END FAILING JSON ---"
+        return
+
+    update = build_post_from_json(info, verbose=args.verbose)
+    if not update:
+        print '[ERROR] - Failed to build post'
+        print "--- BEGIN FAILING JSON ---"
+        print info
+        print "--- END FAILING JSON ---"
+        return
+
+    post_to_twitter(update, verbose=args.verbose, dry_run=args.dry_run)
 
 if __name__ == '__main__':
     main()
