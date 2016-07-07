@@ -79,8 +79,10 @@ def main():
             arrival_offset_string = "{} min Early".format(abs(int(arrival_offset)))
         else:
             arrival_offset_string = "{} min Late".format(abs(int(arrival_offset)))
-    else:
+    elif disruption_message:
         arrival_offset_string = disruption_message.upper()
+    else:
+        arrival_offset_string = 'unknown'.upper()
 
     actual_departure_string = ''
     scheduled_departure_string = scheduled_departure.strftime(time_format_string)
@@ -93,8 +95,10 @@ def main():
             departure_offset_string = "{} min Early".format(abs(int(departure_offset)))
         else:
             departure_offset_string = "{} min Late".format(abs(int(departure_offset)))
-    else:
+    elif disruption_message:
         departure_offset_string = disruption_message.upper()
+    else:
+        departure_offset_string = 'unknown'.upper()
 
     current_date = scheduled_arrival.strftime('%a, %b %d, %Y')
     """ Format
