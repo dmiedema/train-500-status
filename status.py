@@ -4,6 +4,7 @@ import argparse
 import requests
 import json
 import os
+import sys
 import twitter
 from datetime import datetime
 
@@ -22,6 +23,7 @@ def post_to_twitter(post, verbose=False, dry_run=False):
                       access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
                       access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
 
+    status = None
     if not dry_run:
         status = api.PostUpdate(post)
         if verbose:
@@ -30,7 +32,7 @@ def post_to_twitter(post, verbose=False, dry_run=False):
     if verbose:
         print api
 
-    return api
+    return (api, status)
 
 def extract_segment_json(json, verbose=False):
     if verbose:
@@ -118,7 +120,7 @@ Scheduled: {scheduled_departure_time}
 )
     return update
 
-def main():
+def parse_arguments(args):
     parser = argparse.ArgumentParser(description="Train Status Fetcher")
     parser.add_argument("-s", "--station", dest="station", type=str, required=True, help="Station Short Code. Ex: 'SLM'")
     parser.add_argument('-t', '--train', dest='train', type=int, required=True, help='Train Number. Ex: 500')
@@ -127,8 +129,12 @@ def main():
     parser.add_argument('--dry-run', dest='dry_run', action='store_true', help='Skip posting to twitter')
 
     parser.set_defaults(station=None, train=None, date=None, verbose=False, dry_run=False)
+    return parser.parse_args(args)
 
-    args = parser.parse_args()
+def build_request(station=None, train=None, date=None):
+    if not station or not train or not date:
+        print "station={s} train={t} date={d}".format(s=station, t=train, d=date)
+        return None
 
     headers = {
         'User-Agent': 'AmtrakMobileRider/20160511.1521 CFNetwork/711.1.16 Darwin/14.0.0',
@@ -137,17 +143,38 @@ def main():
     params = {
         'appType': 'IOS',
         'type': 'A',
-        'dateTime': args.date,
-        'trainNumber': str(args.train),
+        'dateTime': date,
+        'trainNumber': str(train),
         'versionNumber': '2.2.7',
-        'origin': args.station.upper(),
+        'origin': station.upper(),
     }
-    if args.verbose:
-        print json.dumps(headers)
-        print json.dumps(params)
 
-    r = requests.post('https://services.amtrak.com/Rider/TrainStatus', headers=headers, json=params)
-    j = r.json()
+    return {'url': 'https://services.amtrak.com/Rider/TrainStatus',
+            'headers': headers,
+            'params': params
+            }
+
+def send_request(request):
+    return requests.post(request['url'], headers=request['headers'], json=request['params']).json()
+
+def main():
+    args = parse_arguments(sys.argv[1:])
+
+    request = build_request(station=args.station,
+                            train=args.train,
+                            date=args.date)
+
+    if not request:
+        print 'No Request to send!'
+        print '--- ARGS ---'
+        print args
+        exit(-1)
+
+    if args.verbose:
+        print json.dumps(request['headers'])
+        print json.dumps(request['params'])
+
+    j = send_request(request)
     if args.verbose:
         print '--- Begin JSON Response ---'
         print j

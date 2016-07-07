@@ -1,4 +1,6 @@
 requests
 python-twitter
 pytest
+pytest-cov
+pytest-mock
 
