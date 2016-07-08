@@ -6,6 +6,7 @@ import status
 import fixtures
 import os
 import twitter
+import requests
 
 os.environ['TWITTER_CONSUMER_KEY']        = 'TEST_TWITTER_CONSUMER_KEY'
 os.environ['TWITTER_CONSUMER_SECRET']     = 'TEST_TWITTER_CONSUMER_SECRET'
@@ -41,6 +42,15 @@ def test_post_on_not_dryrun(mocker):
     api = status.post_to_twitter(update)
     assert api is not None
     twitter.Api.PostUpdate.assert_called_once_with(update)
+
+def test_send_request(mocker):
+    mocker.patch('requests.post')
+    request = status.build_request(station='xyz',
+                                   train=12345,
+                                   date='2016-01-01')
+    json = status.send_request(request)
+    assert json is not None
+    requests.post.assert_called_once()
 
 def test_extract_segment_invalid_json():
     assert status.extract_segment_json({}) is None
@@ -84,5 +94,21 @@ def test_build_request():
 
     assert headers['User-Agent'] is not None
     assert headers['Content-Type'] == 'application/json'
+
+def test_main(mocker):
+    mocker.patch('status.parse_arguments')
+    mocker.patch('status.build_request')
+    mocker.patch('status.send_request')
+    mocker.patch('status.extract_segment_json')
+    mocker.patch('status.build_post_from_json')
+    mocker.patch('status.post_to_twitter')
+    status.main()
+
+    status.parse_arguments.assert_called_once()
+    status.build_request.assert_called_once()
+    status.send_request.assert_called_once()
+    status.extract_segment_json.assert_called_once()
+    status.build_post_from_json.assert_called_once()
+    status.post_to_twitter.assert_called_once()
 
 

@@ -13,10 +13,13 @@ def convert_to_datetime(s):
         return datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
     return None
 
+def log(msg='', verbose=False, force=False):
+    if force or verbose:
+        print msg
+
 def post_to_twitter(post, verbose=False, dry_run=False):
-    if verbose:
-        print post
-        print "Post Length: {}".format(len(post))
+    log(post, verbose)
+    log("Post Length: {}". format(len(post)), verbose)
 
     api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
                       consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
@@ -26,17 +29,14 @@ def post_to_twitter(post, verbose=False, dry_run=False):
     status = None
     if not dry_run:
         status = api.PostUpdate(post)
-        if verbose:
-            print status
+        log(status, verbose)
 
-    if verbose:
-        print api
+    log(api, verbose)
 
     return (api, status)
 
 def extract_segment_json(json, verbose=False):
-    if verbose:
-        print json
+    log(json, verbose)
     try:
         return json['journeys'][0]['segments'][0]
     except:
@@ -47,10 +47,9 @@ def build_post_from_json(json, verbose=False):
     if json['destinationStatusComment'] is not None:
         disruption_message = json['destinationStatusComment']
 
-    if verbose:
-        print '--- Begin info[journeys][0][segments][0] ---'
-        print json
-        print '--- End info[journeys][0][segments][0] ---'
+    log("""--- Begin info[journeys][0][segments][0] ---
+{json}
+--- End info[journeys][0][segments][0] ---""".format(json=json), verbose)
 
     station_short_code  = json['originStationCode']
     scheduled_arrival   = convert_to_datetime(json['destinationScheduledArrivalDateTime'])
@@ -160,9 +159,15 @@ def send_request(request):
 def main():
     args = parse_arguments(sys.argv[1:])
 
-    request = build_request(station=args.station,
-                            train=args.train,
-                            date=args.date)
+    station = args.station
+    train   = args.train
+    date    = args.date
+    verbose = args.verbose
+    dry_run = args.dry_run
+
+    request = build_request(station=station,
+                            train=train,
+                            date=date)
 
     if not request:
         print 'No Request to send!'
@@ -170,15 +175,15 @@ def main():
         print args
         exit(-1)
 
-    if args.verbose:
-        print json.dumps(request['headers'])
-        print json.dumps(request['params'])
+    log("{}\n{}".format(request['headers'],
+                        request['params']),
+        verbose)
+
 
     j = send_request(request)
-    if args.verbose:
-        print '--- Begin JSON Response ---'
-        print j
-        print '--- End JSON Response ---'
+    log("""--- Begin JSON Response ---
+{}
+--- End JSON Response ---""".format(j), verbose)
 
     info = extract_segment_json(j)
     if not info:
@@ -188,7 +193,7 @@ def main():
         print "--- END FAILING JSON ---"
         return
 
-    update = build_post_from_json(info, verbose=args.verbose)
+    update = build_post_from_json(info, verbose=verbose)
     if not update:
         print '[ERROR] - Failed to build post'
         print "--- BEGIN FAILING JSON ---"
@@ -196,7 +201,7 @@ def main():
         print "--- END FAILING JSON ---"
         return
 
-    post_to_twitter(update, verbose=args.verbose, dry_run=args.dry_run)
+    post_to_twitter(update, verbose=verbose, dry_run=dry_run)
 
 if __name__ == '__main__':
     main()
