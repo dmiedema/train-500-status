@@ -1,0 +1,1 @@
+./status.py --dry-run -s 'ALY' -t 500 -d 2017-02-21 -v
